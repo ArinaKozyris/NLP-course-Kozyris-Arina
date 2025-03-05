@@ -1,22 +1,19 @@
 !pip install aiogram -q
-from aiogram import Bot, Dispatcher, types
-import logging
-import asyncio
-import sys
+from aiogram import Bot, Dispatcher, types  # Основные классы для работы с ботом
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton  # Импортируем необходимые классы
+import logging  # Логирование для отслеживания работы бота
+import asyncio  # Модуль для работы с асинхронным кодом
 
-API_TOKEN = ''
+API_TOKEN = ''  
+
+# Настраиваем логирование
 logging.basicConfig(level=logging.INFO)
+
+# Создаем объект бота и диспетчера
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-async def main():
-   bot = Bot(token=API_TOKEN)
-   await dp.start_polling(bot)
-
-if __name__ == "__main__":
-  await main()
-
 !wget https://raw.githubusercontent.com/vifirsanova/compling/refs/heads/main/tasks/task3/faq.json
-
 import json
 
 with open('faq.json', encoding='utf-8') as f:
@@ -24,51 +21,54 @@ with open('faq.json', encoding='utf-8') as f:
 
 data
 
-from aiogram.filters import Command
+faq_keywords = {
+    "цены": "цены, стоимость, заказ, оплата",
+    "часы работы": "часы работы, время работы, доступность",
+    "доставка": "доставка, сроки доставки, стоимость доставки, отслеживание",
+    "возврат": "возврат, обмен, возврат товара, гарантия",
+    "контакты": "связаться, телефон, email, адрес"
+}
 
-dp = Dispatcher()
-
-@dp.message(Command("start", "help"))
-async def send_welcome(message: types.Message):
-  await message.answer("Привет! Я бот, который может отвечать на частые вопросы.")
-
-@dp.message()
-async def answer_faq(message: types.Message):
-  text = message.text.lower()
-  response = faq.get(text, "Я не знаю ответа на этот вопрос.")
-  await message.answer(response)
-
-async def main():
-    bot = Bot(token=API_TOKEN)
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    await main()
-
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-dp = Dispatcher()
+# Определение клавиатуры
 kb = [
     [
         KeyboardButton(text="О компании"),
         KeyboardButton(text="Связаться с оператором")
-     ]
+    ]
 ]
+
 keyboard = ReplyKeyboardMarkup(
     keyboard=kb,
     resize_keyboard=True,
     input_field_placeholder="Выберите действие"
-    )
+)
+
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
-  await message.answer("С чем вам помочь?", reply_markup=keyboard)
+    await message.answer("Здравствуйте! Чем я могу вам помочь?", reply_markup=keyboard)
 
-@dp.message(lambda message: message.text == "О компании")
-async def about_bot(message: types.Message):
-  await message.answer("Наша компания занимается доставкой товаров по всей стране.")
+@dp.message()
+async def answer_faq(message: types.Message):
+    text = message.text.lower()
 
-@dp.message(lambda message: message.text == "Связаться с оператором")
-async def about_bot(message: types.Message):
-  await message.answer("Перевожу на оператора...")
+    if text == "о компании":
+        await message.answer("Наша компания занимается доставкой товаров по всей стране.")
+        return
+    elif text == "связаться с оператором":
+        await message.answer("Перевожу на оператора...")
+        return
+
+    # Поиск ответа по ключевым словам
+    response = "Я не знаю ответа на этот вопрос."
+    for category, keywords in faq_keywords.items():
+        if any(keyword in text for keyword in keywords.split(", ")):
+            for item in data["faq"]:
+                if category in item["question"].lower():
+                    response = item["answer"]
+                    break
+            break
+
+    await message.answer(response)
 
 async def main():
     bot = Bot(token=API_TOKEN)
